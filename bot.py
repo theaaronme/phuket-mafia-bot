@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-TOKEN = "8663305968:AAHBgI7L40v-CKFpLY7iOMqSZjQPb4UongE"
+TOKEN = "8663305968:AAGr0u_u-IA0Akp-dBK8YF221bmu0oBJKHM"
 ADMIN_ID = 5797862303
 
 bot = Bot(token=TOKEN)
@@ -192,7 +192,7 @@ async def handler(message: types.Message):
                 "❗️Укажи корректный Telegram ник\n\n"
                 "— только английские буквы\n"
                 "— можно цифры и _\n\n"
-                "Пример: theaaronme",
+                "Пример: @theaaronme",
                 reply_markup=menu_btn()
             )
             return
