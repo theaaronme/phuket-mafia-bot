@@ -99,7 +99,7 @@ async def handler(message: types.Message):
             "— лёгкая игра\n"
             "— знакомства\n"
             "— нетворкинг\n\n"
-            "💰 500฿\n🕖 19:00\n\n"
+            "💰 300฿\n🕖 19:00\n\n"
             "Выбери дату:",
             reply_markup=show_dates("Social")
         )
@@ -112,7 +112,7 @@ async def handler(message: types.Message):
             "🧠 Sport Mafia\n\n"
             "— 10 игроков\n"
             "— логика и давление\n\n"
-            "💰 1000฿\n🕖 19:00\n\n"
+            "💰 500฿\n🕖 19:00\n\n"
             "Выбери дату:",
             reply_markup=show_dates("Sport")
         )
