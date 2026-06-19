@@ -33,14 +33,14 @@ def format_date(day):
 def get_event_info(date_obj):
     weekday = date_obj.weekday()
 
-    if weekday == 2:
+    if weekday == 2:  # Wednesday
         return {
             "time": "19:00",
             "location": "Tempo | Restaurant",
             "map": "https://maps.app.goo.gl/NC6GyBSV6Z59giJH8"
         }
 
-    if weekday == 5:
+    if weekday == 5:  # Saturday
         return {
             "time": "18:00",
             "location": "LAVA Restobar & More",
@@ -54,7 +54,7 @@ def get_event_info(date_obj):
     }
 
 
-# ===== PARSE ДАТЫ ИЗ ТЕКСТА =====
+# ===== PARSE DATE =====
 def parse_date(text: str):
     match = re.search(r"\((\d{2})\.(\d{2})\)", text)
     if not match:
@@ -161,7 +161,30 @@ async def handler(message: types.Message):
         event_date = parse_date(user.get("date", ""))
         info = get_event_info(event_date) if event_date else None
 
-        msg = f"""
+        # ===== ТВОЙ msg_admin (как ты просил) =====
+        msg_admin = f"""
+🔥 НОВАЯ ЗАПИСЬ
+
+📌 Тип: {user.get('type')}
+📅 Дата: {user.get('date', '-')}
+
+🕖 Время: {info['time'] if info else '19:00'}
+📍 Локация: {info['location'] if info else 'TBA'}
+🔗 {info['map'] if info else ''}
+
+👤 <a href="tg://user?id={telegram_id}">{name}</a>
+
+🧠 USER ID: {telegram_id}
+"""
+
+        await bot.send_message(
+            ADMIN_ID,
+            msg_admin,
+            parse_mode="HTML"
+        )
+
+        # ===== ОТВЕТ ПОЛЬЗОВАТЕЛЮ =====
+        user_msg = f"""
 🔥 Ты в игре
 
 📅 {user.get('date', '-')}
@@ -169,18 +192,12 @@ async def handler(message: types.Message):
 📍 {info['location'] if info else 'TBA'}
 {info['map'] if info else ''}
 
-👤 <a href="tg://user?id={telegram_id}">{name}</a>
+👤 {name}
 """
 
-        await bot.send_message(
-            ADMIN_ID,
-            msg,
-            parse_mode="HTML"
-        )
+        await message.answer(user_msg, reply_markup=main_menu())
 
-        await message.answer(msg, parse_mode="HTML", reply_markup=main_menu())
-
-        # save event
+        # ===== SAVE EVENT =====
         if event_date:
             events[event_date.strftime("%d.%m")].append({
                 "user_id": telegram_id,
