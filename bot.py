@@ -171,62 +171,42 @@ async def handler(message: types.Message):
         user_data[user_id]["step"] = "name"
         await message.answer("Напиши своё имя:", reply_markup=menu_btn())
 
-    # ===== ИМЯ =====
-    elif user_id in user_data and user_data[user_id].get("step") == "name":
-        user_data[user_id]["name"] = text
-        user_data[user_id]["step"] = "username"
-        await message.answer("📲 Напиши свой Telegram ник:", reply_markup=menu_btn())
+# ===== ИМЯ =====
+elif user_id in user_data and user_data[user_id].get("step") == "name":
+    user_data[user_id]["name"] = text
 
-    # ===== НИК =====
-    # ===== НИК =====
-    elif user_id in user_data and user_data[user_id].get("step") == "username":
-        username = text.strip()
+    user = user_data[user_id]
+    telegram_id = message.from_user.id
 
-        # убираем @ если есть
-        if username.startswith("@"):
-            username = username[1:]
-
-        # проверка: только английские буквы, цифры и _
-        if not username.isascii() or not username.replace("_", "").isalnum():
-            await message.answer(
-                "❗️Укажи корректный Telegram ник\n\n"
-                "— только английские буквы\n"
-                "— можно цифры и _\n\n"
-                "Пример: @theaaronme",
-                reply_markup=menu_btn()
-            )
-            return
-
-        username = "@" + username
-        user_data[user_id]["username"] = username
-
-        user = user_data[user_id]
-
-        msg = f"""
+    msg = f"""
 🔥 Новая заявка
 
 Тип: {user.get('type')}
 Дата: {user.get('date', '-')}
 Тариф: {user.get('plan', '-')}
 
-Имя: {user.get('name')}
-Ник: {user.get('username')}
+👤 <a href="tg://user?id={telegram_id}">{user.get('name')}</a>
 """
 
-        await bot.send_message(ADMIN_ID, msg)
+    await bot.send_message(
+        ADMIN_ID,
+        msg,
+        parse_mode="HTML"
+    )
 
-        if user["type"] in ["Social", "Sport"]:
-            await message.answer(
-                "🔥 Ты в игре\n\n📍 Локация позже\n🕖 19:00\n\n❗️Не опаздывай",
-                reply_markup=main_menu()
-            )
-        else:
-            await message.answer(
-                "🔥 Заявка отправлена\n\nМы свяжемся с тобой",
-                reply_markup=main_menu()
-            )
+    if user["type"] in ["Social", "Sport"]:
+        await message.answer(
+            "🔥 Ты в игре\n\n📍 Локация позже\n🕖 19:00\n\n❗️Не опаздывай",
+            reply_markup=main_menu()
+        )
+    else:
+        await message.answer(
+            "🔥 Заявка отправлена\n\nМы свяжемся с тобой",
+            reply_markup=main_menu()
+        )
 
-        user_data.pop(user_id)
+    user_data.pop(user_id)
+
 async def main():
     await dp.start_polling(bot)
 
