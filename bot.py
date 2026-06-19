@@ -1,8 +1,8 @@
 users = set()
 
 import asyncio
-from collections import defaultdict
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -14,9 +14,8 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 user_data = {}
-
-# ===== СОБЫТИЯ =====
 events = defaultdict(list)
+
 
 # ===== ДНИ =====
 days_ru = [
@@ -29,7 +28,7 @@ def format_date(day):
     return f"{days_ru[day.weekday()]} ({day.strftime('%d.%m')})"
 
 
-# ===== ЛОКАЦИИ =====
+# ===== ЛОКАЦИИ ПО ДНЯМ =====
 def get_event_info(date_obj):
     weekday = date_obj.weekday()
 
@@ -121,77 +120,72 @@ async def handler(message: types.Message):
     if user_id == ADMIN_ID and text.startswith("/broadcast"):
         msg_to_send = text.replace("/broadcast", "").strip()
 
-        if msg_to_send:
-            sent, failed = 0, 0
+        if not msg_to_send:
+            await message.answer("Напиши: /broadcast текст")
+            return
 
-            for uid in list(users):
-                try:
-                    await bot.send_message(uid, msg_to_send)
-                    sent += 1
-                    await asyncio.sleep(0.03)
-                except:
-                    failed += 1
+        sent = 0
+        failed = 0
 
-            await message.answer(f"📢 Sent: {sent} | Failed: {failed}")
+        for uid in list(users):
+            try:
+                await bot.send_message(uid, msg_to_send)
+                sent += 1
+                await asyncio.sleep(0.03)
+            except:
+                failed += 1
+
+        await message.answer(f"📢 Готово\n✔ {sent}\n❌ {failed}")
         return
 
     # ===== MENU =====
-    if text in ["/start", "🏠 Главное меню"]:
+    if text == "/start" or text == "🏠 Главное меню":
         user_data.pop(user_id, None)
         await message.answer("🕴️ Phuket Mafia Club", reply_markup=main_menu())
-        return
 
     # ===== SOCIAL =====
-    if text == "🍸 Social Mafia":
+    elif text == "🍸 Social Mafia":
         user_data[user_id] = {"type": "Social", "step": "date"}
         await message.answer("Выбери дату:", reply_markup=show_dates("Social"))
-        return
 
     # ===== SPORT =====
-    if text == "🧠 Sport Mafia":
+    elif text == "🧠 Sport Mafia":
         user_data[user_id] = {"type": "Sport", "step": "date"}
         await message.answer("Выбери дату:", reply_markup=show_dates("Sport"))
-        return
 
     # ===== PRIVATE =====
-    if text == "🎉 Private Mafia":
+    elif text == "🎉 Private Mafia":
         user_data[user_id] = {"type": "Private", "step": "date"}
         await message.answer("Напиши дату:", reply_markup=menu_btn())
-        return
 
     # ===== PASS =====
-    if text == "💳 Mafia Pass":
+    elif text == "💳 Mafia Pass":
         user_data[user_id] = {"type": "Pass", "step": "plan"}
         await message.answer("Выбери тариф:", reply_markup=menu_btn())
-        return
 
     # ===== PLAN =====
-    if user_id in user_data and user_data[user_id].get("step") == "plan":
+    elif user_id in user_data and user_data[user_id].get("step") == "plan":
         user_data[user_id]["plan"] = text
         user_data[user_id]["step"] = "name"
         await message.answer("Напиши имя:", reply_markup=menu_btn())
-        return
 
     # ===== COOP =====
-    if text == "🤝 Сотрудничество":
+    elif text == "🤝 Сотрудничество":
         user_data[user_id] = {"type": "Collab", "step": "name"}
         await message.answer("Напиши имя:", reply_markup=menu_btn())
-        return
 
     # ===== RULES =====
-    if text == "📕 Правила":
+    elif text == "📕 Правила":
         await message.answer("Правила: уважение", reply_markup=menu_btn())
-        return
 
     # ===== DATE =====
-    if user_id in user_data and user_data[user_id].get("step") == "date":
+    elif user_id in user_data and user_data[user_id].get("step") == "date":
         user_data[user_id]["date"] = text
         user_data[user_id]["step"] = "name"
         await message.answer("Теперь имя:", reply_markup=menu_btn())
-        return
 
-    # ===== NAME + SAVE EVENT =====
-    if user_id in user_data and user_data[user_id].get("step") == "name":
+    # ===== NAME =====
+    elif user_id in user_data and user_data[user_id].get("step") == "name":
         user_data[user_id]["name"] = text
         user = user_data[user_id]
 
@@ -209,30 +203,30 @@ async def handler(message: types.Message):
 
         await bot.send_message(ADMIN_ID, msg, parse_mode="HTML")
 
-        # ===== SAVE EVENT =====
-        date_text = user.get("date")
-        if date_text:
-            events[date_text].append({
-                "user_id": user_id,
+        # сохраняем в события
+        user_date = user.get("date")
+        if user_date:
+            events[user_date].append({
+                "user_id": telegram_id,
                 "name": name
             })
 
         await message.answer("🔥 Готово", reply_markup=main_menu())
+
         user_data.pop(user_id, None)
-        return
 
 
-# ===== REMINDER SYSTEM =====
+# ===== AUTO REMINDER =====
 async def reminder_loop():
     while True:
         now = datetime.now()
 
-        for date_text, users_list in list(events.items()):
+        for date_key, users_list in list(events.items()):
             try:
-                day_num = int(date_text.split("(")[-1].replace(")", "").split(".")[0])
-                month_num = int(date_text.split("(")[-1].replace(")", "").split(".")[1])
+                day_num = int(date_key.split("(")[-1].replace(")", ""))
+                month = now.month
 
-                event_date = datetime(now.year, month_num, day_num)
+                event_date = datetime(now.year, month, day_num)
 
                 diff = (event_date - now).total_seconds()
 
@@ -251,6 +245,9 @@ async def reminder_loop():
                             await bot.send_message(u["user_id"], msg)
                         except:
                             pass
+
+            except:
+                continue
 
         await asyncio.sleep(3600)
 
