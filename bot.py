@@ -1,3 +1,4 @@
+users = set()
 import asyncio
 from datetime import datetime, timedelta
 
@@ -82,6 +83,7 @@ def show_dates(user_type):
 async def handler(message: types.Message):
     user_id = message.from_user.id
     text = message.text
+    users.add(user_id)
 
     # ===== MENU =====
     if text == "/start" or text == "🏠 Главное меню":
@@ -208,3 +210,28 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+# ===== BROADCAST (АДМИН РАССЫЛКА) =====
+elif user_id == ADMIN_ID and text.startswith("/broadcast"):
+    msg_to_send = text.replace("/broadcast", "").strip()
+
+    if not msg_to_send:
+        await message.answer("Напиши текст: /broadcast текст")
+        return
+
+    sent = 0
+    failed = 0
+
+    for uid in list(users):
+        try:
+            await bot.send_message(uid, msg_to_send)
+            sent += 1
+            await asyncio.sleep(0.03)  # защита от лимитов Telegram
+        except:
+            failed += 1
+
+    await message.answer(
+        f"📢 Рассылка завершена\n\n"
+        f"✔ Отправлено: {sent}\n"
+        f"❌ Ошибки: {failed}"
+    )
