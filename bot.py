@@ -1,3 +1,5 @@
+
+
 users = set()
 
 import asyncio
@@ -30,30 +32,24 @@ def format_date(day):
 
 # ===== ЛОКАЦИИ =====
 def get_event_info(date_obj):
-    weekday = date_obj.weekday()
-
-    if weekday == 2:
+    if date_obj.weekday() == 2:
         return {
             "time": "19:00",
             "location": "Tempo | Restaurant",
             "map": "https://maps.app.goo.gl/NC6GyBSV6Z59giJH8"
         }
 
-    if weekday == 5:
+    if date_obj.weekday() == 5:
         return {
             "time": "18:00",
             "location": "LAVA Restobar & More",
             "map": "https://maps.app.goo.gl/UxUNkkknesw588ur8"
         }
 
-    return {
-        "time": "19:00",
-        "location": "TBA",
-        "map": ""
-    }
+    return {"time": "19:00", "location": "TBA", "map": ""}
 
 
-# ===== KEYBOARD =====
+# ===== КНОПКИ =====
 def main_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -80,14 +76,58 @@ async def handler(message: types.Message):
 
     users.add(user_id)
 
-    # ===== DATE STEP =====
+    # ===== BROADCAST =====
+    if user_id == ADMIN_ID and text.startswith("/broadcast"):
+        msg_to_send = text.replace("/broadcast", "").strip()
+
+        for uid in list(users):
+            try:
+                await bot.send_message(uid, msg_to_send)
+                await asyncio.sleep(0.03)
+            except:
+                pass
+
+        await message.answer("📢 Готово")
+        return
+
+    # ===== MENU =====
+    if text in ["/start", "🏠 Главное меню"]:
+        user_data.pop(user_id, None)
+        await message.answer("🕴️ Phuket Mafia Club", reply_markup=main_menu())
+        return
+
+    # ===== SOCIAL =====
+    if text == "🍸 Social Mafia":
+        user_data[user_id] = {"type": "Social", "step": "date"}
+        await message.answer("Выбери дату:")
+        return
+
+    # ===== SPORT =====
+    if text == "🧠 Sport Mafia":
+        user_data[user_id] = {"type": "Sport", "step": "date"}
+        await message.answer("Выбери дату:")
+        return
+
+    # ===== PRIVATE =====
+    if text == "🎉 Private Mafia":
+        user_data[user_id] = {"type": "Private", "step": "date"}
+        await message.answer("Напиши дату:", reply_markup=menu_btn())
+        return
+
+    # ===== PASS =====
+    if text == "💳 Mafia Pass":
+        user_data[user_id] = {"type": "Pass", "step": "plan"}
+        await message.answer("Выбери тариф:", reply_markup=menu_btn())
+        return
+
+    # ===== DATE =====
     if user_id in user_data and user_data[user_id].get("step") == "date":
         user_data[user_id]["date"] = text
         user_data[user_id]["step"] = "name"
         await message.answer("Теперь имя:", reply_markup=menu_btn())
         return
 
-    # ===== NAME STEP =====
+    # ===== NAME =====
     if user_id in user_data and user_data[user_id].get("step") == "name":
         user_data[user_id]["name"] = text
         user = user_data[user_id]
@@ -95,27 +135,8 @@ async def handler(message: types.Message):
         telegram_id = user_id
         name = user.get("name")
 
-        msg = f"""
-🔥 Новая заявка
-
-Тип: {user.get('type')}
-Дата: {user.get('date', '-')}
-
-👤 <a href="tg://user?id={telegram_id}">{name}</a>
-"""
-
-        await bot.send_message(ADMIN_ID, msg, parse_mode="HTML")
-
-        # ===== EVENT SAVE =====
+        # сохраняем событие
         user_date = user.get("date")
-        if user_date:
-            events[user_date].append({
-                "user_id": telegram_id,
-                "name": name
-            })
-
-        # ===== RESPONSE =====
-        event_text = "🔥 Ты в игре"
 
         if user_date:
             try:
@@ -133,47 +154,27 @@ async def handler(message: types.Message):
 
                 if info["map"]:
                     event_text += f"\n🔗 {info['map']}"
-
             except:
-                pass
+                event_text = "🔥 Ты в игре"
+        else:
+            event_text = "🔥 Ты в игре"
+
+        await bot.send_message(
+            ADMIN_ID,
+            f"🔥 Новая заявка\n\nТип: {user.get('type')}\n📅 {user.get('date','-')}\n👤 <a href='tg://user?id={telegram_id}'>{name}</a>",
+            parse_mode="HTML"
+        )
 
         await message.answer(event_text, reply_markup=main_menu())
 
+        # сохраняем в events
+        if user_date:
+            events[user_date].append({"user_id": telegram_id})
+
         user_data.pop(user_id, None)
-        return
-
-    # ===== MENU =====
-    if text == "/start" or text == "🏠 Главное меню":
-        user_data.pop(user_id, None)
-        await message.answer("🕴️ Phuket Mafia Club", reply_markup=main_menu())
-        return
-
-    # ===== SOCIAL =====
-    if text == "🍸 Social Mafia":
-        user_data[user_id] = {"type": "Social", "step": "date"}
-        await message.answer("Выбери дату:", reply_markup=main_menu())
-        return
-
-    # ===== SPORT =====
-    if text == "🧠 Sport Mafia":
-        user_data[user_id] = {"type": "Sport", "step": "date"}
-        await message.answer("Выбери дату:", reply_markup=main_menu())
-        return
-
-    # ===== PRIVATE =====
-    if text == "🎉 Private Mafia":
-        user_data[user_id] = {"type": "Private", "step": "date"}
-        await message.answer("Напиши дату:", reply_markup=menu_btn())
-        return
-
-    # ===== PASS =====
-    if text == "💳 Mafia Pass":
-        user_data[user_id] = {"type": "Pass", "step": "date"}
-        await message.answer("Выбери тариф:", reply_markup=menu_btn())
-        return
 
 
-# ===== REMINDER LOOP =====
+# ===== REMINDER =====
 async def reminder_loop():
     while True:
         now = datetime.now()
@@ -185,7 +186,7 @@ async def reminder_loop():
 
                 diff = (event_date - now).total_seconds()
 
-                if 23 * 3600 < diff < 25 * 3600:
+                if 23*3600 < diff < 25*3600:
                     info = get_event_info(event_date)
 
                     msg = (
@@ -199,7 +200,7 @@ async def reminder_loop():
                         await bot.send_message(u["user_id"], msg)
 
             except:
-                pass
+                continue
 
         await asyncio.sleep(3600)
 
