@@ -204,7 +204,11 @@ async def handler(message: types.Message):
 👤 {name}
 """
 
-        await message.answer(user_msg, reply_markup=main_menu())
+        await message.answer(
+    user_msg,
+    reply_markup=main_menu(),
+    parse_mode="HTML"
+)
 
         # ===== SAVE EVENT =====
         if event_date:
