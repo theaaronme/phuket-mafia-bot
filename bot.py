@@ -69,7 +69,7 @@ def show_dates(user_type):
             KeyboardButton(text=format_date(days[0])),
             KeyboardButton(text=format_date(days[1]))
         ])
-    elif len(days) == 1:
+    else:
         keyboard.append([KeyboardButton(text=format_date(days[0]))])
 
     keyboard.append([KeyboardButton(text="🏠 Главное меню")])
@@ -83,16 +83,12 @@ async def handler(message: types.Message):
     user_id = message.from_user.id
     text = message.text
 
-    # ===== START / MENU =====
+    # ===== MENU =====
     if text == "/start" or text == "🏠 Главное меню":
         user_data.pop(user_id, None)
 
         await message.answer(
-            "🕴️ Phuket Mafia Club\n\n"
-            "🍸 Social — городская мафия + знакомства\n"
-            "🧠 Sport — 10 игроков, хардкор логика\n"
-            "🎉 Private — под вашу компанию\n"
-            "💳 Pass — подписка\n",
+            "🕴️ Phuket Mafia Club\n\nВыбирай формат игры 👇",
             reply_markup=main_menu()
         )
 
@@ -119,7 +115,7 @@ async def handler(message: types.Message):
         user_data[user_id] = {"type": "Private", "step": "date"}
 
         await message.answer(
-            "🎉 Напиши дату и формат:\nпример: 5 мая, день рождения",
+            "🎉 Напиши дату и формат (пример: 5 мая, день рождения)",
             reply_markup=menu_btn()
         )
 
@@ -139,10 +135,7 @@ async def handler(message: types.Message):
             resize_keyboard=True
         )
 
-        await message.answer(
-            "💳 Выбери тариф:",
-            reply_markup=keyboard
-        )
+        await message.answer("💳 Выбери тариф:", reply_markup=keyboard)
 
     # ===== PASS PLAN =====
     elif user_id in user_data and user_data[user_id].get("step") == "plan":
@@ -164,31 +157,39 @@ async def handler(message: types.Message):
             reply_markup=menu_btn()
         )
 
-    # ===== DATE =====
+    # ===== DATE STEP =====
     elif user_id in user_data and user_data[user_id].get("step") == "date":
         user_data[user_id]["date"] = text
         user_data[user_id]["step"] = "name"
 
-        await message.answer("Напиши своё имя:", reply_markup=menu_btn())
+        await message.answer("Теперь напиши своё имя:", reply_markup=menu_btn())
 
-    # ===== NAME (FIXED PLACE) =====
+    # ===== NAME STEP (ФИНАЛ) =====
     elif user_id in user_data and user_data[user_id].get("step") == "name":
         user_data[user_id]["name"] = text
         user = user_data[user_id]
 
-        msg = (
-            f"🔥 Новая заявка\n\n"
-            f"Тип: {user.get('type')}\n"
-            f"Дата: {user.get('date', '-')}\n"
-            f"Тариф: {user.get('plan', '-')}\n\n"
-            f"👤 {user.get('name')}"
-        )
+        telegram_id = message.from_user.id
+        name = user.get("name")
 
-        await bot.send_message(ADMIN_ID, msg)
+        msg = f"""
+🔥 Новая заявка
+
+Тип: {user.get('type')}
+Дата: {user.get('date', '-')}
+
+👤 <a href="tg://user?id={telegram_id}">{name}</a>
+"""
+
+        await bot.send_message(
+            ADMIN_ID,
+            msg,
+            parse_mode="HTML"
+        )
 
         if user["type"] in ["Social", "Sport"]:
             await message.answer(
-                "🔥 Ты в игре\n📍 Локация позже\n🕖 19:00",
+                "🔥 Ты в игре\n📍 Локация придёт позже\n🕖 19:00",
                 reply_markup=main_menu()
             )
         else:
