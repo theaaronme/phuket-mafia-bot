@@ -54,6 +54,17 @@ def get_event_info(date_obj):
     }
 
 
+# ===== КЛИКАБЕЛЬНАЯ ЛОКАЦИЯ =====
+def format_location(info):
+    if not info:
+        return "TBA"
+
+    if not info.get("map"):
+        return info.get("location", "TBA")
+
+    return f'<a href="{info["map"]}">{info["location"]}</a>'
+
+
 # ===== PARSE DATE =====
 def parse_date(text: str):
     match = re.search(r"\((\d{2})\.(\d{2})\)", text)
@@ -161,7 +172,7 @@ async def handler(message: types.Message):
         event_date = parse_date(user.get("date", ""))
         info = get_event_info(event_date) if event_date else None
 
-        # ===== ТВОЙ msg_admin (как ты просил) =====
+        # ===== ADMIN MSG =====
         msg_admin = f"""
 🔥 НОВАЯ ЗАПИСЬ
 
@@ -169,8 +180,7 @@ async def handler(message: types.Message):
 📅 Дата: {user.get('date', '-')}
 
 🕖 Время: {info['time'] if info else '19:00'}
-📍 Локация: {info['location'] if info else 'TBA'}
-🔗 {info['map'] if info else ''}
+📍 Локация: {format_location(info)}
 
 👤 <a href="tg://user?id={telegram_id}">{name}</a>
 
@@ -183,14 +193,13 @@ async def handler(message: types.Message):
             parse_mode="HTML"
         )
 
-        # ===== ОТВЕТ ПОЛЬЗОВАТЕЛЮ =====
+        # ===== USER MSG =====
         user_msg = f"""
 🔥 Ты в игре
 
 📅 {user.get('date', '-')}
 🕖 {info['time'] if info else '19:00'}
-📍 {info['location'] if info else 'TBA'}
-{info['map'] if info else ''}
+📍 {format_location(info)}
 
 👤 {name}
 """
