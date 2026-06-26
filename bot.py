@@ -8,7 +8,7 @@ import re
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-TOKEN = "8663305968:AAGr0u_u-IA0Akp-dBK8YF221bmu0oBJKHM"
+TOKEN = "8663305968:AAFvottJsPwgqOuiNtP95C3F8MFtrhOqBcY"
 ADMIN_ID = 5797862303
 
 bot = Bot(token=TOKEN)
