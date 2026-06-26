@@ -43,8 +43,8 @@ def get_event_info(date_obj):
     if weekday == 5:  # Saturday
         return {
             "time": "18:00",
-            "location": "LAVA Restobar & More",
-            "map": "https://maps.app.goo.gl/UxUNkkknesw588ur8"
+            "location": "SHISHKA & UMAY",
+            "map": "https://maps.app.goo.gl/K2yuMXsqQvwb9agf8?g_st=ic"
         }
 
     return {
